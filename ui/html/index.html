@@ -3,6 +3,16 @@
 {{define "scripts"}}{{end}}
 
 {{define "main"}}
+
+  {{range .BFiles}}
+        <div class="card">
+            <div class="container">
+                <h3>{{ .Name }}</h3>
+                <h4>{{ .CreateDate }}</h4>
+                <h5>{{ .Size }} MB</h5>
+            </div>
+        </div>
+  {{end}}
 <h2>Последние заметки</h2>
 <p>Пока здесь ничего нет!</p>
 {{end}}
