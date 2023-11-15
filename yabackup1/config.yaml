@@ -1,0 +1,35 @@
+name: "Yandex backup111"
+description: "Copy HA backup to YandexDisk"
+version: "1.2.4"
+slug: "yabackup111"
+url: "https://github.com/maxifly/YaBackupAddon/tree/main/yabackup"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+
+map:
+  - backup
+
+options:
+  client_id: 0
+  client_secret: 0
+  remote_path: "/ha_test"
+  remote_maximum_files_quantity: 10
+  schedule: "1 2 * * *"
+  log_level: INFO
+
+schema:
+  client_id: str
+  client_secret: str
+  remote_path: str
+  remote_maximum_files_quantity: "int(0,)"
+  schedule: str
+  log_level: "list(DEBUG|INFO|WARNING|ERROR)"
+
+startup: before
+
+ingress: true
