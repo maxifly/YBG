@@ -42,7 +42,7 @@ RUN if [ "${BUILD_ARCH}" = "armhf" ]; then \
     else \
         exit 1; \
     fi \
-    && go build -o scheduler.bin
+    && go build -o YBG
 
 
 WORKDIR /app

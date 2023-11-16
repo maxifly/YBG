@@ -7,66 +7,80 @@ import (
 	"os"
 )
 
-type BackupFileInfo struct {
-	Name       string
-	CreateDate string
-	Size       string
-	IsLocal    bool
-	IsRemote   bool
+type Application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	debugLog *log.Logger
 }
 
 type BackupResponse struct {
 	BFiles []BackupFileInfo
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request) {
+	app.infoLog.Println("indexHandler")
 	files := []string{
 		"./ui/html/index.html",
 		"./ui/html/base.html",
 	}
 
-	// Используем функцию template.ParseFiles() для чтения файлов шаблона.
-	// Если возникла ошибка, мы запишем детальное сообщение ошибки и
-	// используя функцию http.Error() мы отправим пользователю
-	// ответ: 500 Internal Server Error (Внутренняя ошибка на сервере)
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Println(err.Error())
+		app.errorLog.Println(err.Error())
 		http.Error(w, "Internal Server Error", 500)
 		return
 	}
 
-	// Затем мы используем метод Execute() для записи содержимого
-	// шаблона в тело HTTP ответа. Последний параметр в Execute() предоставляет
-	// возможность отправки динамических данных в шаблон.
+	filesInfo, err := GetFilesInfo(app)
 
-	bFiles := make([]BackupFileInfo, 0, 0)
-
-	bFiles = append(bFiles, BackupFileInfo{Name: "test1", CreateDate: "01.01", Size: "125", IsLocal: true, IsRemote: true})
-	bFiles = append(bFiles, BackupFileInfo{Name: "test2", CreateDate: "02.02", Size: "125", IsLocal: true, IsRemote: true})
-
-	data := BackupResponse{BFiles: bFiles}
+	data := BackupResponse{BFiles: filesInfo}
 
 	err = ts.Execute(w, data)
 	if err != nil {
-		log.Println(err.Error())
+		app.errorLog.Println(err.Error())
 		http.Error(w, "Internal Server Error", 500)
 	}
 }
 
+//func startUpload(w http.ResponseWriter, r *http.Request) {
+//	log.Println("startUpload")
+//
+//}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "4000"
+		port = "8099"
+	}
+
+	// TODO Надо как-то узнать включен дебаг или нет
+	debugLog := log.New(NewNullWriter(), "DEBUG\t", log.Ldate|log.Ltime|log.Lshortfile)
+	debugLog = log.New(os.Stdout, "DEBUG\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// Test log messages
+	debugLog.Println("hello")
+	infoLog.Println("hello")
+	errorLog.Println("hello")
+
+	// Инициализируем новую структуру с зависимостями приложения.
+	app := &Application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+		debugLog: debugLog,
 	}
 
 	mux := http.NewServeMux()
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	mux.HandleFunc("/", indexHandler)
+	mux.HandleFunc("/", app.indexHandler)
+	mux.HandleFunc("/index", app.indexHandler)
+	//mux.HandleFunc("/start_upload", startUpload)
 
-	log.Printf("Запуск веб-сервера на http://127.0.0.1:%s", port)
+	infoLog.Printf("Запуск веб-сервера на http://127.0.0.1:%s", port)
 	err := http.ListenAndServe(":"+port, mux)
 	log.Fatal(err)
 }
