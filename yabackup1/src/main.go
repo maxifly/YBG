@@ -8,10 +8,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 const FILE_PATH_OPTIONS = "/data/options.json"
-const FILE_PATH_TOKEN = "/data/token.json"
+const FILE_PATH_TOKEN = "/data/tokenInfo.json"
 const BACKUP_PATH = "/backup"
 
 type ApplOptions struct {
@@ -22,12 +23,18 @@ type ApplOptions struct {
 	Schedule                   string `json:"schedule"`
 	LogLevel                   string `json:"log_level"`
 }
+type TokenInfo struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	Expiry       time.Time `json:"expiry,omitempty"`
+}
 
 type Application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	debugLog *log.Logger
-	options  ApplOptions
+	errorLog  *log.Logger
+	infoLog   *log.Logger
+	debugLog  *log.Logger
+	options   ApplOptions
+	tokenInfo TokenInfo
 }
 
 type AlertMessage struct {
@@ -105,15 +112,23 @@ func (app *Application) getToken(w http.ResponseWriter, r *http.Request) {
 	if checkCode == "" {
 		app.renderTokenForm(w, r, "Check code is required!")
 	} else {
-		token, err := CreateToken(
+		tokenInfo, err := CreateToken(
 			app.options.ClientId,
 			app.options.ClientSecret,
 			r.PostFormValue("check_code"))
 		if err != nil {
-			app.errorLog.Println(err.Error())
-			http.Error(w, "Create Token Error", 500)
+			app.errorLog.Println("Get token error. %v", err.Error())
+			http.Error(w, "Create TokenInfo Error", 500)
 		}
-		app.infoLog.Printf("Token %v", token)
+		app.infoLog.Printf("TokenInfo %v", tokenInfo)
+		err = WriteToken(tokenInfo)
+		if err == nil {
+			app.debugLog.Printf("Write token success.")
+			app.tokenInfo = tokenInfo
+		} else {
+			app.errorLog.Printf("Save token error. %v", err)
+		}
+
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }

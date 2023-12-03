@@ -2,26 +2,44 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/yandex"
+	"os"
 )
 
 func GetCheckCodeUrl(clientId string) string {
 	return "https://oauth.yandex.ru/authorize?response_type=code&client_id=" + clientId
 }
 
-func CreateToken(clientId string, clientSecret string, code string) (oauth2.Token, error) {
+func CreateToken(clientId string, clientSecret string, code string) (TokenInfo, error) {
 
 	config := oauth2.Config{
-		ClientID:     "859eee7fe42742f485c982b813646431",
-		ClientSecret: "4434d58aa29141529ddd9fd6193caf4e",
+		ClientID:     clientId,
+		ClientSecret: clientSecret,
 		Endpoint:     yandex.Endpoint,
 	}
 
 	tokenValue, err := config.Exchange(context.Background(), code)
-	if err == nil {
-		return *tokenValue, nil
+	if err != nil {
+		return *new(TokenInfo), nil
 	}
-	return oauth2.Token{}, err
+	tokenInfo := TokenInfo{AccessToken: tokenValue.AccessToken,
+		RefreshToken: tokenValue.RefreshToken,
+		Expiry:       tokenValue.Expiry}
+	return tokenInfo, err
+}
 
+func WriteToken(tokenInfo TokenInfo) error {
+	jsonData, err := json.Marshal(tokenInfo)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(FILE_PATH_TOKEN, jsonData, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
