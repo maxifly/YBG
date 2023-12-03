@@ -5,6 +5,8 @@ github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiu
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
 github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
+github.com/maxifly/upload-big-file v1.0.0 h1:vbxbXycrvAY3hfsQNzcQRvcOrHG0X+EbK8nznMmUac4=
+github.com/maxifly/upload-big-file v1.0.0/go.mod h1:25HoF1GOzA9/N4VWrquWYtxX3yzLgDptxpOPO4D/xys=
 github.com/nikitaksv/yandex-disk-sdk-go v1.0.3/go.mod h1:QfOCihjDA/i6oH9vMub0B5SZwSgmYYTXnNuE7ziMqmA=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/net v0.0.0-20190603091049-60506f45cf65/go.mod h1:HSz+uSET+XFnRR8LxR5pz3Of3rY3CfYBVs4xY44aLks=
