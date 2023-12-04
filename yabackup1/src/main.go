@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	yadisk "github.com/nikitaksv/yandex-disk-sdk-go"
 	"html/template"
 	"log"
 	"net/http"
@@ -35,6 +36,7 @@ type Application struct {
 	debugLog  *log.Logger
 	options   ApplOptions
 	tokenInfo TokenInfo
+	yaDisk    *yadisk.YaDisk
 }
 
 type AlertMessage struct {
@@ -64,9 +66,14 @@ func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	alertMessages := make([]AlertMessage, 0)
+	if isTokenEmpty(app.tokenInfo) {
+		alertMessages = append(alertMessages, AlertMessage{Message: "Token does not exists"})
+	}
+
 	filesInfo, err := GetFilesInfo(app)
 
-	data := BackupResponse{BFiles: filesInfo}
+	data := BackupResponse{BFiles: filesInfo, AlertMessages: alertMessages}
 
 	err = ts.Execute(w, data)
 	if err != nil {
@@ -120,8 +127,8 @@ func (app *Application) getToken(w http.ResponseWriter, r *http.Request) {
 			app.errorLog.Println("Get token error. %v", err.Error())
 			http.Error(w, "Create TokenInfo Error", 500)
 		}
-		app.infoLog.Printf("TokenInfo %v", tokenInfo)
-		err = WriteToken(tokenInfo)
+		app.debugLog.Printf("Create token success")
+		err = writeToken(tokenInfo)
 		if err == nil {
 			app.debugLog.Printf("Write token success.")
 			app.tokenInfo = tokenInfo
@@ -145,6 +152,27 @@ func readOptions() (ApplOptions, error) {
 	return data, err
 }
 
+func (app *Application) ensureYandexDisk() {
+	if !isTokenEmpty(app.tokenInfo) {
+		disk, err := NewYandexDisk(app.tokenInfo.AccessToken)
+		if err != nil {
+			app.errorLog.Printf("Error when create YaDisk %v", err)
+			return
+		}
+		app.yaDisk = &disk
+	}
+}
+
+func (app *Application) ensureTokenInfo() {
+	if isTokenEmpty(app.tokenInfo) {
+		token, err := readToken()
+		if err != nil {
+			app.errorLog.Printf("Error read token info %v", err)
+			return
+		}
+		app.tokenInfo = token
+	}
+}
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -195,6 +223,10 @@ func main() {
 	//mux.HandleFunc("/start_upload", startUpload)
 
 	errorLog.Printf("(It is not error!!!) Run WEB-Server on http://127.0.0.1:%s", port)
+
+	app.ensureTokenInfo()
+	app.ensureYandexDisk()
+
 	err = http.ListenAndServe(":"+port, router)
 	log.Fatal(err)
 }

@@ -30,7 +30,7 @@ func CreateToken(clientId string, clientSecret string, code string) (TokenInfo, 
 	return tokenInfo, err
 }
 
-func WriteToken(tokenInfo TokenInfo) error {
+func writeToken(tokenInfo TokenInfo) error {
 	jsonData, err := json.Marshal(tokenInfo)
 	if err != nil {
 		return err
@@ -42,4 +42,15 @@ func WriteToken(tokenInfo TokenInfo) error {
 	}
 
 	return nil
+}
+
+func readToken() (TokenInfo, error) {
+	plan, _ := os.ReadFile(FILE_PATH_TOKEN)
+	var data TokenInfo
+	err := json.Unmarshal(plan, &data)
+	return data, err
+}
+
+func isTokenEmpty(tokenInfo TokenInfo) bool {
+	return tokenInfo.AccessToken == "" || tokenInfo.RefreshToken == ""
 }
