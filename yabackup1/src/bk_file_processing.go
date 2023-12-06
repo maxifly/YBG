@@ -10,6 +10,9 @@ type BackupFileInfo struct {
 
 func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 	application.debugLog.Println("Start get files")
+
+	getRemoteFiles(application)
+
 	//TODO Create
 	bFiles := make([]BackupFileInfo, 0, 0)
 

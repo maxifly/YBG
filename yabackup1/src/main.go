@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	yadisk "github.com/nikitaksv/yandex-disk-sdk-go"
+	yadisk "github.com/maxifly/yandex-disk-sdk-go"
 	"html/template"
 	"log"
 	"net/http"

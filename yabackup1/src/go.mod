@@ -1,9 +1,9 @@
 module YBG
 
+replace github.com/nikitaksv/yandex-disk-sdk-go v1.0.3 => github.com/maxifly/yandex-disk-sdk-go v1.0.4
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/maxifly/upload-big-file v1.0.0
-	github.com/nikitaksv/yandex-disk-sdk-go v1.0.3
 	golang.org/x/oauth2 v0.14.0
 )
 
