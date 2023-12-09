@@ -7,8 +7,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
+
+const MiB = 1 << 20
 
 type BackupFileInfo struct {
 	Name       string
@@ -44,8 +48,46 @@ func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 
 	return bFiles, nil
 }
-func intersectFiles(app *Application) {
 
+type stringSet map[string]bool
+
+func intersectFiles(app *Application,
+	localFiles map[string]LocalBackupFileInfo,
+	remoteFiles []RemoteFileInfo) ([]BackupFileInfo, error) {
+
+	remoteFileNames := make(stringSet)
+	processedRemoteFile := make(stringSet)
+
+	for _, remoteFile := range remoteFiles {
+		remoteFileNames[remoteFile.Name] = true
+	}
+
+	result := make([]BackupFileInfo, len(localFiles))
+
+	// Обработаем локальные файлы
+	for _, localFile := range localFiles {
+		remoteFileName := generateRemoteFileName(localFile)
+		_, isRemote := remoteFileNames[remoteFileName]
+
+		result = append(result,
+			BackupFileInfo{
+				Name:       localFile.Name,
+				CreateDate: localFile.CreateDate.Format("02.01.2006 15:04:05 MST"),
+				Size:       strconv.FormatInt(localFile.Size/MiB, 10),
+				IsLocal:    true,
+				IsRemote:   isRemote,
+			})
+
+		processedRemoteFile[remoteFileName] = true
+	}
+
+	//TODO create processing remote files
+	
+	return result, nil
+}
+
+func generateRemoteFileName(localFile LocalBackupFileInfo) string {
+	return strings.ReplaceAll(strings.ReplaceAll((localFile.Name+"_"+localFile.Slug), " ", "-"), ":", "_")
 }
 
 func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInfo) {
