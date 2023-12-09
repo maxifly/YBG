@@ -4,6 +4,7 @@ import (
 	"context"
 	yadisk "github.com/nikitaksv/yandex-disk-sdk-go"
 	"net/http"
+	"time"
 )
 
 const itemTypeFile string = "file"
@@ -11,7 +12,7 @@ const itemTypeFile string = "file"
 type RemoteFileInfo struct {
 	Name     string
 	Size     int64
-	Modified string
+	Modified time.Time
 }
 
 func NewYandexDisk(accessToken string) (yadisk.YaDisk, error) {
@@ -36,13 +37,24 @@ func getRemoteFiles(app *Application) []RemoteFileInfo {
 		if item.Type != itemTypeFile {
 			continue
 		}
+
+		modifyedTime, err := convertDateString(item.Modified)
+		if err != nil {
+			app.errorLog.Printf("Can not parse data %s %v", item.Modified, err)
+			modifyedTime = time.Now() //TODO Сделат какую-то минимальную дату по умолчанию
+		}
 		result = append(result, RemoteFileInfo{Name: item.Name,
 			Size:     item.Size,
-			Modified: item.Modified})
+			Modified: modifyedTime})
 
 	}
 	app.infoLog.Printf("%d", len(result))
 	app.debugLog.Printf("files %+v", result)
 	return result
 
+}
+
+func convertDateString(modified string) (time.Time, error) {
+	return time.Parse(time.RFC3339, modified)
+	//"modified": "2023-10-31T03:32:52+00:00",
 }

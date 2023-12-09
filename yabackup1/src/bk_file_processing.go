@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type BackupFileInfo struct {
@@ -17,10 +18,10 @@ type BackupFileInfo struct {
 	IsRemote   bool
 }
 
-type LocalBackupFile struct {
+type LocalBackupFileInfo struct {
 	Slug       string
 	Name       string
-	CreateDate string
+	CreateDate time.Time
 	Path       string
 	Size       int64
 }
@@ -43,15 +44,18 @@ func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 
 	return bFiles, nil
 }
+func intersectFiles(app *Application) {
 
-func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFile) {
+}
+
+func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInfo) {
 
 	entries, err := os.ReadDir(BACKUP_PATH)
 	if err != nil {
 		app.errorLog.Printf("Unable to read backup %s. %v", BACKUP_PATH, err)
 		return fmt.Errorf("error when read local backups"), nil
 	}
-	result := make(map[string]LocalBackupFile)
+	result := make(map[string]LocalBackupFileInfo)
 	for _, entry := range entries {
 		app.debugLog.Printf("entry %+v", entry)
 		info, err := entry.Info()
@@ -73,23 +77,15 @@ func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFile) {
 			continue
 		}
 
-		result[archInfo.Slug] = LocalBackupFile{Slug: archInfo.Slug,
+		result[archInfo.Slug] = LocalBackupFileInfo{Slug: archInfo.Slug,
 			Name:       info.Name(),
 			Path:       filePath,
 			Size:       info.Size(),
-			CreateDate: info.ModTime().String(),
+			CreateDate: info.ModTime(),
 		}
 	}
 	return nil, result
 
-	//files, err := ioutil.ReadDir(".")
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//for _, file := range files {
-	//	fmt.Println(file.Name(), file.IsDir())
-	//}
 }
 
 type BackupArchInfo struct {
