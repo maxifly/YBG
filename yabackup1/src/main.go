@@ -124,7 +124,7 @@ func (app *Application) getToken(w http.ResponseWriter, r *http.Request) {
 			app.options.ClientSecret,
 			r.PostFormValue("check_code"))
 		if err != nil {
-			app.errorLog.Println("Get token error. %v", err.Error())
+			app.errorLog.Printf("Get token error. %v", err.Error())
 			http.Error(w, "Create TokenInfo Error", 500)
 		}
 		app.debugLog.Printf("Create token success")

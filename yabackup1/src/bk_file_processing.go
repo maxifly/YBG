@@ -137,10 +137,14 @@ func extractArchInfo(app *Application, tarfile string) (*BackupArchInfo, error) 
 
 			}
 
+			app.infoLog.Printf("plan=%v\n", plan)
 			err = json.Unmarshal(plan, &data)
+			app.infoLog.Printf("data=%v\n", data)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse backup info, error=[%v]", err)
-
+			}
+			if data.Slug == "" || data.Name == "" {
+				return nil, fmt.Errorf("cannot parse backup info. Necessary field not found")
 			}
 			return &data, nil
 		}
