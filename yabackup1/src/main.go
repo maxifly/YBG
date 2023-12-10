@@ -69,6 +69,8 @@ func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request) {
 	alertMessages := make([]AlertMessage, 0)
 	if isTokenEmpty(app.tokenInfo) {
 		alertMessages = append(alertMessages, AlertMessage{Message: "Token does not exists"})
+	} else if !isTokenValid(app.tokenInfo) {
+		alertMessages = append(alertMessages, AlertMessage{Message: "Token is not valid or expired"})
 	}
 
 	filesInfo, err := GetFilesInfo(app)

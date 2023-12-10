@@ -54,3 +54,10 @@ func readToken() (TokenInfo, error) {
 func isTokenEmpty(tokenInfo TokenInfo) bool {
 	return tokenInfo.AccessToken == "" || tokenInfo.RefreshToken == ""
 }
+
+func isTokenValid(tokenInfo TokenInfo) bool {
+	token := oauth2.Token{AccessToken: tokenInfo.AccessToken,
+		RefreshToken: tokenInfo.RefreshToken,
+		Expiry:       tokenInfo.Expiry}
+	return token.Valid()
+}
