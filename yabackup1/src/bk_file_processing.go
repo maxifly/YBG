@@ -5,48 +5,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
+	"sort"
 	"strings"
 	"time"
 )
 
-const MiB = 1 << 20
-
-type BackupFileInfo struct {
-	Name       string
-	CreateDate string
-	Size       string
-	IsLocal    bool
-	IsRemote   bool
-}
-
-type LocalBackupFileInfo struct {
-	Slug       string
-	Name       string
-	CreateDate time.Time
-	Path       string
-	Size       int64
-}
-
 func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 	application.debugLog.Println("Start get files")
 
-	getRemoteFiles(application)
+	remoteFiles := getRemoteFiles(application)
 	err, localFiles := getLocalBackupFiles(application)
 	if err != nil {
-		return nil, err
+		localFiles = make(map[string]LocalBackupFileInfo)
 	}
 
-	application.debugLog.Printf("Local files: %+v", localFiles)
-	//TODO Create
-	bFiles := make([]BackupFileInfo, 0, 0)
-
-	bFiles = append(bFiles, BackupFileInfo{Name: "test1", CreateDate: "01.01", Size: "125", IsLocal: true, IsRemote: true})
-	bFiles = append(bFiles, BackupFileInfo{Name: "test2", CreateDate: "02.02", Size: "125", IsLocal: true, IsRemote: true})
-
-	return bFiles, nil
+	return intersectFiles(application, localFiles, remoteFiles)
 }
 
 type stringSet map[string]bool
@@ -62,7 +38,7 @@ func intersectFiles(app *Application,
 		remoteFileNames[remoteFile.Name] = true
 	}
 
-	result := make([]BackupFileInfo, len(localFiles))
+	result := make([]BackupFileInfo, 0, len(localFiles))
 
 	// Обработаем локальные файлы
 	for _, localFile := range localFiles {
@@ -71,23 +47,39 @@ func intersectFiles(app *Application,
 
 		result = append(result,
 			BackupFileInfo{
-				Name:       localFile.Name,
-				CreateDate: localFile.CreateDate.Format("02.01.2006 15:04:05 MST"),
-				Size:       strconv.FormatInt(localFile.Size/MiB, 10),
-				IsLocal:    true,
-				IsRemote:   isRemote,
+				GeneralInfo: localFile.GeneralInfo,
+				IsLocal:     true,
+				IsRemote:    isRemote,
 			})
 
 		processedRemoteFile[remoteFileName] = true
 	}
 
-	//TODO create processing remote files
-	
+	for _, remoteFile := range remoteFiles {
+		if _, isProcessing := processedRemoteFile[remoteFile.Name]; !isProcessing {
+			result = append(result,
+				BackupFileInfo{
+					GeneralInfo: GeneralFileInfo{
+						Name:     remoteFile.Name,
+						Size:     remoteFile.Size,
+						Modified: remoteFile.Modified,
+					},
+					IsLocal:  false,
+					IsRemote: true,
+				})
+			processedRemoteFile[remoteFile.Name] = true
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return time.Time(result[i].GeneralInfo.Modified).After(time.Time(result[j].GeneralInfo.Modified))
+	})
 	return result, nil
 }
 
+// localFile.CreateDate.Format("02.01.2006 15:04:05 MST"),
 func generateRemoteFileName(localFile LocalBackupFileInfo) string {
-	return strings.ReplaceAll(strings.ReplaceAll((localFile.Name+"_"+localFile.Slug), " ", "-"), ":", "_")
+	return strings.ReplaceAll(strings.ReplaceAll((localFile.GeneralInfo.Name+"_"+localFile.Slug), " ", "-"), ":", "_")
 }
 
 func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInfo) {
@@ -119,20 +111,21 @@ func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInf
 			continue
 		}
 
-		result[archInfo.Slug] = LocalBackupFileInfo{Slug: archInfo.Slug,
-			Name:       info.Name(),
-			Path:       filePath,
-			Size:       info.Size(),
-			CreateDate: info.ModTime(),
+		result[archInfo.Slug] = LocalBackupFileInfo{
+			GeneralInfo: convertYdInfoToGeneral(&info),
+			Slug:        archInfo.Slug,
+			Path:        filePath,
 		}
 	}
 	return nil, result
 
 }
 
-type BackupArchInfo struct {
-	Slug string
-	Name string
+func convertYdInfoToGeneral(ydFileInfo *fs.FileInfo) GeneralFileInfo {
+	return GeneralFileInfo{Name: (*ydFileInfo).Name(),
+		Size:     fileSize((*ydFileInfo).Size()),
+		Modified: fileModified((*ydFileInfo).ModTime()),
+	}
 }
 
 func extractArchInfo(app *Application, tarfile string) (*BackupArchInfo, error) {

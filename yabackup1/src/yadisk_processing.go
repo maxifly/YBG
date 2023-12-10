@@ -9,12 +9,6 @@ import (
 
 const itemTypeFile string = "file"
 
-type RemoteFileInfo struct {
-	Name     string
-	Size     int64
-	Modified time.Time
-}
-
 func NewYandexDisk(accessToken string) (yadisk.YaDisk, error) {
 	return yadisk.NewYaDisk(context.Background(), http.DefaultClient, &yadisk.Token{AccessToken: accessToken})
 
@@ -44,8 +38,8 @@ func getRemoteFiles(app *Application) []RemoteFileInfo {
 			modifyedTime = time.Now() //TODO Сделат какую-то минимальную дату по умолчанию
 		}
 		result = append(result, RemoteFileInfo{Name: item.Name,
-			Size:     item.Size,
-			Modified: modifyedTime})
+			Size:     fileSize(item.Size),
+			Modified: fileModified(modifyedTime)})
 
 	}
 	app.infoLog.Printf("%d", len(result))

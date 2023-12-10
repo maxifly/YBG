@@ -7,9 +7,9 @@
   {{range .BFiles}}
         <div class="card">
             <div class="container">
-                <h3>{{ .Name }}</h3>
-                <h4>{{ .CreateDate }}</h4>
-                <h5>{{ .Size }} MB</h5>
+                <h3>{{ .GeneralInfo.Name }}</h3>
+                <h4>{{ .GeneralInfo.Modified.Convert2String }}</h4>
+                <h5>{{ .GeneralInfo.Size.Convert2MbString }} MB</h5>
             </div>
         </div>
   {{end}}
