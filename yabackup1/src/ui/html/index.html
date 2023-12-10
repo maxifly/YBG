@@ -4,16 +4,27 @@
 
 {{define "main"}}
 
-  {{range .BFiles}}
-        <div class="card">
-            <div class="container">
-                <h3>{{ .GeneralInfo.Name }}</h3>
-                <h4>{{ .GeneralInfo.Modified.Convert2String }}</h4>
-                <h5>{{ .GeneralInfo.Size.Convert2MbString }} MB</h5>
-            </div>
+{{range .BFiles}}
+<div class="card">
+    <div class="container">
+        <h3>{{ .GeneralInfo.Name }}</h3>
+        <h4>{{ .GeneralInfo.Modified.Convert2String }}</h4>
+        <h5>{{ .GeneralInfo.Size.Convert2MbString }} MB</h5>
+        <div class="icons">
+            {{if .IsLocal}}
+            <img class="icon" src="/static/database.png">
+            {{else}}
+            <img class="icon hidden" src="/static/database.png">
+            {{end}}
+            {{if .IsRemote}}
+            <img class="icon" src="/static/cloud.png">
+            {{else}}
+            <img class="icon hidden" src="/static/cloud.png">
+            {{end}}
         </div>
-  {{end}}
-<h2>Последние заметки</h2>
-<p>Пока здесь ничего нет!</p>
+    </div>
+</div>
+{{end}}
+
 {{end}}
 

@@ -72,6 +72,9 @@ func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filesInfo, err := GetFilesInfo(app)
+	if err != nil {
+		alertMessages = append(alertMessages, AlertMessage{Message: err.Error()})
+	}
 
 	data := BackupResponse{BFiles: filesInfo, AlertMessages: alertMessages}
 

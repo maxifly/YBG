@@ -14,15 +14,14 @@ func NewYandexDisk(accessToken string) (yadisk.YaDisk, error) {
 
 }
 
-func getRemoteFiles(app *Application) []RemoteFileInfo {
+func getRemoteFiles(app *Application) ([]RemoteFileInfo, error) {
 	app.infoLog.Printf("%v", app.options.RemotePath)
 
 	result := make([]RemoteFileInfo, 0)
 	resource, err := (*app.yaDisk).GetResource(app.options.RemotePath, make([]string, 0), 10000, 0, false, "0", "name")
 	if err != nil {
-		app.errorLog.Printf("Disk %+v", (app.yaDisk))
 		app.errorLog.Printf("Error when get remote files %v", err)
-		return result
+		return result, err
 	}
 
 	app.infoLog.Printf("%+v", resource)
@@ -44,7 +43,7 @@ func getRemoteFiles(app *Application) []RemoteFileInfo {
 	}
 	app.infoLog.Printf("%d", len(result))
 	app.debugLog.Printf("files %+v", result)
-	return result
+	return result, nil
 
 }
 

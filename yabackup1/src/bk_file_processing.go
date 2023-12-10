@@ -16,10 +16,13 @@ import (
 func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 	application.debugLog.Println("Start get files")
 
-	remoteFiles := getRemoteFiles(application)
-	err, localFiles := getLocalBackupFiles(application)
+	remoteFiles, err := getRemoteFiles(application)
 	if err != nil {
-		localFiles = make(map[string]LocalBackupFileInfo)
+		return make([]BackupFileInfo, 0), err
+	}
+	localFiles, err := getLocalBackupFiles(application)
+	if err != nil {
+		return make([]BackupFileInfo, 0), err
 	}
 
 	return intersectFiles(application, localFiles, remoteFiles)
@@ -82,12 +85,12 @@ func generateRemoteFileName(localFile LocalBackupFileInfo) string {
 	return strings.ReplaceAll(strings.ReplaceAll((localFile.GeneralInfo.Name+"_"+localFile.Slug), " ", "-"), ":", "_")
 }
 
-func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInfo) {
+func getLocalBackupFiles(app *Application) (map[string]LocalBackupFileInfo, error) {
 
 	entries, err := os.ReadDir(BACKUP_PATH)
 	if err != nil {
 		app.errorLog.Printf("Unable to read backup %s. %v", BACKUP_PATH, err)
-		return fmt.Errorf("error when read local backups"), nil
+		return nil, fmt.Errorf("error when read local backups")
 	}
 	result := make(map[string]LocalBackupFileInfo)
 	for _, entry := range entries {
@@ -117,7 +120,7 @@ func getLocalBackupFiles(app *Application) (error, map[string]LocalBackupFileInf
 			Path:        filePath,
 		}
 	}
-	return nil, result
+	return result, nil
 
 }
 
