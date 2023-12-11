@@ -5,6 +5,12 @@ import "time"
 type fileSize int64
 type fileModified time.Time
 
+type TokenInfo struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	Expiry       time.Time `json:"expiry,omitempty"`
+}
+
 type GeneralFileInfo struct {
 	Name     string
 	Size     fileSize

@@ -24,7 +24,7 @@ func getRemoteFiles(app *Application) ([]RemoteFileInfo, error) {
 		return result, err
 	}
 
-	app.infoLog.Printf("%+v", resource)
+	app.debugLog.Printf("Found %d items", len(resource.Embedded.Items))
 
 	for _, item := range resource.Embedded.Items {
 		if item.Type != itemTypeFile {
@@ -41,8 +41,8 @@ func getRemoteFiles(app *Application) ([]RemoteFileInfo, error) {
 			Modified: fileModified(modifyedTime)})
 
 	}
-	app.infoLog.Printf("%d", len(result))
-	app.debugLog.Printf("files %+v", result)
+
+	app.debugLog.Printf("Processing %d files", len(result))
 	return result, nil
 
 }

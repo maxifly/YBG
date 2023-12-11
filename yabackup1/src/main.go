@@ -24,11 +24,6 @@ type ApplOptions struct {
 	Schedule                   string `json:"schedule"`
 	LogLevel                   string `json:"log_level"`
 }
-type TokenInfo struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token,omitempty"`
-	Expiry       time.Time `json:"expiry,omitempty"`
-}
 
 type Application struct {
 	errorLog  *log.Logger
@@ -73,6 +68,7 @@ func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request) {
 		alertMessages = append(alertMessages, AlertMessage{Message: "Token is not valid or expired"})
 	}
 
+	app.refreshTokenIsNeed()
 	filesInfo, err := GetFilesInfo(app)
 	if err != nil {
 		alertMessages = append(alertMessages, AlertMessage{Message: err.Error()})
@@ -178,6 +174,31 @@ func (app *Application) ensureTokenInfo() {
 		app.tokenInfo = token
 	}
 }
+
+func (app *Application) refreshTokenIsNeed() bool {
+	if app.tokenInfo.Expiry.After(time.Now().Add(time.Duration(240) * time.Hour)) {
+		app.debugLog.Printf("Not need refresh token")
+		return false
+	}
+
+	tokenInfo, err := RefreshToken(app.options.ClientId, app.options.ClientSecret, app.tokenInfo)
+	if err != nil {
+		app.errorLog.Printf("Error when refresh token %v", err)
+		return false
+	}
+	app.infoLog.Printf("%+v", tokenInfo)
+
+	err = writeToken(*tokenInfo)
+	if err != nil {
+		app.errorLog.Printf("Error when write token %v", err)
+		return false
+	}
+
+	app.tokenInfo = *tokenInfo
+	app.infoLog.Printf("Refresh token done")
+	return true
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -230,6 +251,7 @@ func main() {
 	errorLog.Printf("(It is not error!!!) Run WEB-Server on http://127.0.0.1:%s", port)
 
 	app.ensureTokenInfo()
+	app.refreshTokenIsNeed()
 	app.ensureYandexDisk()
 
 	err = http.ListenAndServe(":"+port, router)
