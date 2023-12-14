@@ -141,10 +141,22 @@ func (app *Application) getToken(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//func startUpload(w http.ResponseWriter, r *http.Request) {
-//	log.Println("startUpload")
-//
-//}
+func (app *Application) startUpload(w http.ResponseWriter, r *http.Request) {
+	log.Println("startUpload")
+	app.refreshTokenIsNeed()
+	filesInfo, err := GetFilesInfo(app)
+	if err != nil {
+		app.errorLog.Printf("Error get backup files %s", err)
+	}
+	filesToUpload := ChooseFilesToUpload(app, filesInfo)
+	if len(filesToUpload) > 0 {
+		err := UploadFiles(app, filesToUpload)
+		if err != nil {
+			app.errorLog.Printf("Error upload files %s", err)
+		}
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
 
 func readOptions() (ApplOptions, error) {
 	plan, _ := os.ReadFile(FILE_PATH_OPTIONS)
@@ -246,6 +258,7 @@ func main() {
 	router.HandleFunc("/index", app.indexHandler).Methods("GET")
 	router.HandleFunc("/get_token", app.getTokenForm).Methods("GET")
 	router.HandleFunc("/get_token", app.getToken).Methods("POST")
+	router.HandleFunc("/start_upload", app.startUpload).Methods("GET")
 	//mux.HandleFunc("/start_upload", startUpload)
 
 	errorLog.Printf("(It is not error!!!) Run WEB-Server on http://127.0.0.1:%s", port)

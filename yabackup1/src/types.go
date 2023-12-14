@@ -20,13 +20,16 @@ type GeneralFileInfo struct {
 type RemoteFileInfo GeneralFileInfo
 
 type BackupFileInfo struct {
-	GeneralInfo GeneralFileInfo
-	IsLocal     bool
-	IsRemote    bool
+	GeneralInfo    GeneralFileInfo
+	BackupName     string
+	RemoteFileName string
+	IsLocal        bool
+	IsRemote       bool
 }
 
 type LocalBackupFileInfo struct {
 	GeneralInfo GeneralFileInfo
+	BackupName  string
 	Slug        string
 	Path        string
 }
@@ -34,4 +37,8 @@ type LocalBackupFileInfo struct {
 type BackupArchInfo struct {
 	Slug string
 	Name string
+}
+type ForUploadFileInfo struct {
+	LocalFileInfo  GeneralFileInfo
+	RemoteFileName string
 }

@@ -28,6 +28,41 @@ func GetFilesInfo(application *Application) ([]BackupFileInfo, error) {
 	return intersectFiles(application, localFiles, remoteFiles)
 }
 
+func UploadFiles(app *Application, files []ForUploadFileInfo) error {
+	sort.Slice(files, func(i, j int) bool {
+		return time.Time(files[i].LocalFileInfo.Modified).Before(time.Time(files[j].LocalFileInfo.Modified))
+	})
+
+	isError := false
+
+	for _, file := range files {
+		app.debugLog.Printf("Try upload %s", file.LocalFileInfo.Name)
+		err := uploadFile(file.LocalFileInfo.Name, file.RemoteFileName)
+		if err != nil {
+			app.errorLog.Printf("Error when upload file %s. Err: %s", file.LocalFileInfo.Name, err)
+			isError = true
+		}
+	}
+	if isError {
+		return fmt.Errorf("error when upload files")
+	}
+	return nil
+}
+
+func ChooseFilesToUpload(app *Application, files []BackupFileInfo) []ForUploadFileInfo {
+	result := make([]ForUploadFileInfo, 0)
+	for _, file := range files {
+		if file.IsLocal && !file.IsRemote {
+			result = append(result, ForUploadFileInfo{
+				LocalFileInfo:  file.GeneralInfo,
+				RemoteFileName: file.RemoteFileName,
+			})
+		}
+	}
+	app.infoLog.Printf("Need upload %d files", len(result))
+	return result
+}
+
 type stringSet map[string]bool
 
 func intersectFiles(app *Application,
@@ -50,9 +85,11 @@ func intersectFiles(app *Application,
 
 		result = append(result,
 			BackupFileInfo{
-				GeneralInfo: localFile.GeneralInfo,
-				IsLocal:     true,
-				IsRemote:    isRemote,
+				GeneralInfo:    localFile.GeneralInfo,
+				BackupName:     localFile.BackupName,
+				RemoteFileName: remoteFileName,
+				IsLocal:        true,
+				IsRemote:       isRemote,
 			})
 
 		processedRemoteFile[remoteFileName] = true
@@ -67,8 +104,10 @@ func intersectFiles(app *Application,
 						Size:     remoteFile.Size,
 						Modified: remoteFile.Modified,
 					},
-					IsLocal:  false,
-					IsRemote: true,
+					BackupName:     remoteFile.Name,
+					RemoteFileName: remoteFile.Name,
+					IsLocal:        false,
+					IsRemote:       true,
 				})
 			processedRemoteFile[remoteFile.Name] = true
 		}
@@ -115,8 +154,9 @@ func getLocalBackupFiles(app *Application) (map[string]LocalBackupFileInfo, erro
 		}
 
 		result[archInfo.Slug] = LocalBackupFileInfo{
-			GeneralInfo: convertYdInfoToGeneral(&info),
+			GeneralInfo: convertBkFileInfoToGeneral(&info),
 			Slug:        archInfo.Slug,
+			BackupName:  archInfo.Name,
 			Path:        filePath,
 		}
 	}
@@ -124,10 +164,10 @@ func getLocalBackupFiles(app *Application) (map[string]LocalBackupFileInfo, erro
 
 }
 
-func convertYdInfoToGeneral(ydFileInfo *fs.FileInfo) GeneralFileInfo {
-	return GeneralFileInfo{Name: (*ydFileInfo).Name(),
-		Size:     fileSize((*ydFileInfo).Size()),
-		Modified: fileModified((*ydFileInfo).ModTime()),
+func convertBkFileInfoToGeneral(bkFileInfo *fs.FileInfo) GeneralFileInfo {
+	return GeneralFileInfo{Name: (*bkFileInfo).Name(),
+		Size:     fileSize((*bkFileInfo).Size()),
+		Modified: fileModified((*bkFileInfo).ModTime()),
 	}
 }
 
@@ -153,11 +193,10 @@ func extractArchInfo(app *Application, tarfile string) (*BackupArchInfo, error) 
 			return nil, fmt.Errorf("cannot read tar file, error=[%v]", err)
 		}
 
-		j, err := json.Marshal(header)
+		_, err = json.Marshal(header)
 		if err != nil {
 			return nil, fmt.Errorf("cannot parse header, error=[%v]", err)
 		}
-		app.infoLog.Printf("header=%s\n", string(j))
 
 		info := header.FileInfo()
 		if info.IsDir() || info.Name() != "backup.json" {
@@ -171,9 +210,8 @@ func extractArchInfo(app *Application, tarfile string) (*BackupArchInfo, error) 
 
 			}
 
-			app.infoLog.Printf("plan=%v\n", plan)
 			err = json.Unmarshal(plan, &data)
-			app.infoLog.Printf("data=%v\n", data)
+			app.debugLog.Printf("data= %+v\n", data)
 			if err != nil {
 				return nil, fmt.Errorf("cannot parse backup info, error=[%v]", err)
 			}

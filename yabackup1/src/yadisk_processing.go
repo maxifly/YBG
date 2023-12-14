@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	yadisk "github.com/nikitaksv/yandex-disk-sdk-go"
 	"net/http"
 	"time"
@@ -47,6 +48,10 @@ func getRemoteFiles(app *Application) ([]RemoteFileInfo, error) {
 
 }
 
+func uploadFile(source string, destination string) error {
+	//TODO create
+	return fmt.Errorf("error upload %s %s", source, destination)
+}
 func convertDateString(modified string) (time.Time, error) {
 	return time.Parse(time.RFC3339, modified)
 	//"modified": "2023-10-31T03:32:52+00:00",
