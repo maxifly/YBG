@@ -121,7 +121,7 @@ func intersectFiles(app *Application,
 
 // localFile.CreateDate.Format("02.01.2006 15:04:05 MST"),
 func generateRemoteFileName(localFile LocalBackupFileInfo) string {
-	return strings.ReplaceAll(strings.ReplaceAll((localFile.GeneralInfo.Name+"_"+localFile.Slug), " ", "-"), ":", "_")
+	return strings.ReplaceAll(strings.ReplaceAll(localFile.BackupName+"_"+localFile.Slug, " ", "-"), ":", "_")
 }
 
 func getLocalBackupFiles(app *Application) (map[string]LocalBackupFileInfo, error) {
